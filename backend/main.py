@@ -4,20 +4,19 @@ from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 from passlib.context import CryptContext
 from jose import JWTError, jwt
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Optional, List
 
 import models
 import schemas
 from database import engine, get_db
 
-# 1. Δημιουργία πινάκων στη βάση
+# 1. Δημιουργία πινάκων στη βάση (για να σιγουρευτούμε ότι υπάρχουν τα πάντα)
 models.Base.metadata.create_all(bind=engine)
 
-# 2. Αρχικοποίηση εφαρμογής
 app = FastAPI(title="Event Management API")
 
-# 3. Ρύθμιση CORS
+# 2. Ρύθμιση CORS (Απαραίτητο για να μιλάει η React στο API)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -26,15 +25,15 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# 4. Ρυθμίσεις Ασφαλείας
-SECRET_KEY = "my_super_secret_key_for_this_app"
+# 3. Ρυθμίσεις Ασφαλείας
+SECRET_KEY = "my_super_secret_key_for_this_app" # Στην πραγματικότητα θα ήταν κρυφό
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 60
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="users/login")
 
-# --- ΒΟΗΘΗΤΙΚΕΣ ΣΥΝΑΡΤΗΣΕΙΣ (UTILS) ---
+# --- ΒΟΗΘΗΤΙΚΕΣ ΣΥΝΑΡΤΗΣΕΙΣ ---
 
 def get_password_hash(password):
     return pwd_context.hash(password)
@@ -45,16 +44,16 @@ def verify_password(plain_password, hashed_password):
 def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
     to_encode = data.copy()
     if expires_delta:
-        expire = datetime.utcnow() + expires_delta
+        expire = datetime.now(timezone.utc) + expires_delta
     else:
-        expire = datetime.utcnow() + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+        expire = datetime.now(timezone.utc) + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     to_encode.update({"exp": expire})
     return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
 
 def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)):
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
-        detail="Μη έγκυρα διαπιστευτήρια",
+        detail="Could not validate credentials",
         headers={"WWW-Authenticate": "Bearer"},
     )
     try:
@@ -80,7 +79,8 @@ def read_root():
 
 @app.post("/users/register", response_model=schemas.UserResponse)
 def register_user(user: schemas.UserCreate, db: Session = Depends(get_db)):
-    if db.query(models.User).filter(models.User.username == user.username).first():
+    db_user = db.query(models.User).filter(models.User.username == user.username).first()
+    if db_user:
         raise HTTPException(status_code=400, detail="Το username υπάρχει ήδη.")
     
     new_user = models.User(
@@ -90,7 +90,7 @@ def register_user(user: schemas.UserCreate, db: Session = Depends(get_db)):
         first_name=user.first_name,
         last_name=user.last_name,
         role=user.role,
-        is_approved=False
+        is_approved=True # Το βάζουμε True για να μπορείς να συνδεθείς αμέσως!
     )
     db.add(new_user)
     db.commit()
@@ -176,7 +176,6 @@ def create_booking(booking: schemas.BookingCreate, db: Session = Depends(get_db)
     db.refresh(new_booking)
     return new_booking
 
-# Endpoint για να βλέπει ο χρήστης τις κρατήσεις του
 @app.get("/bookings/", response_model=List[schemas.BookingResponse])
 def get_my_bookings(db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
     return db.query(models.Booking).filter(models.Booking.user_id == current_user.id).all()

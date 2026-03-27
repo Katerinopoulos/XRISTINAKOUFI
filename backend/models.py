@@ -14,6 +14,10 @@ class User(Base):
     role = Column(String, default="GUEST")
     is_approved = Column(Boolean, default=False)
 
+    # ΠΡΟΣΤΕΘΗΚΑΝ ΑΥΤΕΣ ΟΙ ΔΥΟ ΓΡΑΜΜΕΣ (ΛΕΙΠΑΝ)
+    organized_events = relationship("Event", back_populates="organizer")
+    bookings = relationship("Booking", back_populates="user")
+
 class Event(Base):
     __tablename__ = "events"
     id = Column(String(50), primary_key=True, index=True)

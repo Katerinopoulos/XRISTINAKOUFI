@@ -17,7 +17,7 @@ function Login({ setToken }) {
     formData.append('password', password)
 
     try {
-      const response = await axios.post('http://localhost:8000/users/login', formData)
+      const response = await axios.post('https://xristinakoufi.onrender.com/users/login', formData)
       const token = response.data.access_token
       localStorage.setItem('token', token)
       setToken(token)

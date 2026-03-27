@@ -6,16 +6,13 @@ import datetime
 class User(Base):
     __tablename__ = "users"
     id = Column(Integer, primary_key=True, index=True)
-    username = Column(String(50), unique=True, index=True, nullable=False)
-    password_hash = Column(String(255), nullable=False)
-    email = Column(String(100), unique=True, index=True, nullable=False)
-    first_name = Column(String(50))
-    last_name = Column(String(50))
-    role = Column(String(20), default="GUEST")
+    username = Column(String, unique=True, index=True)
+    password_hash = Column(String)
+    email = Column(String, unique=True)
+    first_name = Column(String, nullable=True)
+    last_name = Column(String, nullable=True)
+    role = Column(String, default="GUEST")
     is_approved = Column(Boolean, default=False)
-    
-    organized_events = relationship("Event", back_populates="organizer")
-    bookings = relationship("Booking", back_populates="user")
 
 class Event(Base):
     __tablename__ = "events"

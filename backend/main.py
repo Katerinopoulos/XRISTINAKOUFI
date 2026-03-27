@@ -9,14 +9,44 @@ from typing import Optional, List
 
 import models
 import schemas
-from database import engine, get_db
+from database import engine, get_db, SessionLocal
 
-# 1. Δημιουργία πινάκων στη βάση (για να σιγουρευτούμε ότι υπάρχουν τα πάντα)
+# 1. Δημιουργία πινάκων στη βάση
 models.Base.metadata.create_all(bind=engine)
 
+# --- ΑΥΤΟΜΑΤΟ REGISTER ΧΡΗΣΤΗ (SEEDING) ---
+# Αυτό το μπλοκ φτιάχνει τον χρήστη 'xristina' αυτόματα μόλις ξεκινήσει ο server
+def seed_user():
+    db = SessionLocal()
+    try:
+        pwd_context_seed = CryptContext(schemes=["bcrypt"], deprecated="auto")
+        existing_user = db.query(models.User).filter(models.User.username == "xristina").first()
+        if not existing_user:
+            hashed_password = pwd_context_seed.hash("123")
+            new_user = models.User(
+                username="xristina",
+                email="xristina@example.com",
+                password_hash=hashed_password,
+                first_name="Xristina",
+                last_name="Koufi",
+                role="GUEST",
+                is_approved=True
+            )
+            db.add(new_user)
+            db.commit()
+            print("User 'xristina' created successfully!")
+    except Exception as e:
+        print(f"Error seeding user: {e}")
+    finally:
+        db.close()
+
+seed_user()
+# ------------------------------------------
+
+# 2. Αρχικοποίηση εφαρμογής
 app = FastAPI(title="Event Management API")
 
-# 2. Ρύθμιση CORS (Απαραίτητο για να μιλάει η React στο API)
+# 3. Ρύθμιση CORS
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -25,8 +55,8 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# 3. Ρυθμίσεις Ασφαλείας
-SECRET_KEY = "my_super_secret_key_for_this_app" # Στην πραγματικότητα θα ήταν κρυφό
+# 4. Ρυθμίσεις Ασφαλείας
+SECRET_KEY = "my_super_secret_key_for_this_app"
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 60
 
@@ -79,8 +109,7 @@ def read_root():
 
 @app.post("/users/register", response_model=schemas.UserResponse)
 def register_user(user: schemas.UserCreate, db: Session = Depends(get_db)):
-    db_user = db.query(models.User).filter(models.User.username == user.username).first()
-    if db_user:
+    if db.query(models.User).filter(models.User.username == user.username).first():
         raise HTTPException(status_code=400, detail="Το username υπάρχει ήδη.")
     
     new_user = models.User(
@@ -90,7 +119,7 @@ def register_user(user: schemas.UserCreate, db: Session = Depends(get_db)):
         first_name=user.first_name,
         last_name=user.last_name,
         role=user.role,
-        is_approved=True # Το βάζουμε True για να μπορείς να συνδεθείς αμέσως!
+        is_approved=True
     )
     db.add(new_user)
     db.commit()

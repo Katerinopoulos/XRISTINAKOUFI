@@ -13,14 +13,14 @@ function App() {
   }, [])
 
   const fetchData = () => {
-    axios.get('http://localhost:8000/events/')
+    axios.get('https://xristinakoufi.onrender.com/events/')
       .then(res => setEvents(res.data))
       .catch(err => console.error(err))
   }
 
   const handleBooking = async (ticketTypeId) => {
     try {
-      await axios.post('http://localhost:8000/bookings/', 
+      await axios.post('https://xristinakoufi.onrender.com/bookings/', 
         { ticket_type_id: ticketTypeId, quantity: 1 }, 
         { headers: { Authorization: `Bearer ${token}` } }
       )

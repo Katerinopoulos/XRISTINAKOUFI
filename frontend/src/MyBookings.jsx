@@ -8,7 +8,7 @@ function MyBookings() {
 
   useEffect(() => {
     if (token) {
-      axios.get('http://localhost:8000/bookings/', {
+      axios.get('https://xristinakoufi.onrender.com/bookings/', {
         headers: { Authorization: `Bearer ${token}` }
       })
       .then(res => {

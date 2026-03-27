@@ -1,8 +1,8 @@
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, declarative_base
 
-# Το URL για την SQLite (το αρχείο θα δημιουργηθεί αυτόματα στον ίδιο φάκελο)
-SQLALCHEMY_DATABASE_URL = "sqlite:///./event_app.db"
+# ΑΛΛΑΞΑΜΕ ΤΟ ΟΝΟΜΑ ΓΙΑ ΝΑ ΦΤΙΑΧΤΕΙ ΚΑΘΑΡΗ ΒΑΣΗ ΣΤΟ ΊΝΤΕΡΝΕΤ
+SQLALCHEMY_DATABASE_URL = "sqlite:///./live_event_app.db"
 
 # Δημιουργία της "μηχανής". 
 # Το check_same_thread=False χρειάζεται μόνο για την SQLite στο FastAPI.

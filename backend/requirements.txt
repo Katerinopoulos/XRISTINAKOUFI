@@ -6,3 +6,4 @@ bcrypt
 python-jose
 email-validator
 pydantic
+python-multipart
